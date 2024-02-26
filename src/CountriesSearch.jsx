@@ -6,6 +6,7 @@ const CountriesSearch = () => {
     const [data,setData]=useState([])
     const [searchVal,setSearch]=useState('')
     const [filteredData,setFilteredData]=useState([])
+    const [timerId,setTimerId]=useState(null)
 
     useEffect(()=>{
       fetchData()
@@ -22,18 +23,40 @@ const CountriesSearch = () => {
         console.log(err)
       }
     }
-    const handleSearch=(value)=>{
-        setSearch(value)
-        if (searchVal === "") { setFilteredData(data); return; }
-        const filterBySearch = data.filter((item) => {
-            if (item.name.common.toLowerCase()
-                .includes(searchVal.toLowerCase())) { return item; }
-        })
+
+    const debounceSearch =(event, debounceTimeout) => {
+        const value=event.target.value
+        setSearch(event.target.value)
+        let timer= setTimeout(()=>{
+            if (value === "") { setFilteredData(data); return; }
+            const filterBySearch = data.filter(
+                country => {
+                  return (
+                    country.name.common
+                    .toLowerCase()
+                    .includes(value.toLowerCase()) 
+                  );
+                }
+              );
         setFilteredData(filterBySearch)
+    },500);
+         setTimerId(timer)
+     
     }
+
+    useEffect(()=>{
+        return ()=>{
+          clearTimeout(timerId)
+        }
+      },[timerId])
+
   return (
     <div>
-      <input type="text" placeholder='Search for Countries...' onChange={(e)=>handleSearch(e.target.value)} value={searchVal}/>
+      <input type="text" placeholder='Search for Countries...' onChange={(e)=> 
+       { 
+        debounceSearch(e,timerId)
+        }
+        } value={searchVal}/>
       <div className={styles.gridContainer}>
     {filteredData.length ? filteredData.map((item, index) => (
     <div className={styles.griditem}>
@@ -42,7 +65,7 @@ const CountriesSearch = () => {
                     <img src={item.flags.png} alt={item.flags.alt} className={styles.cardimg}/>  
                     </div>
                     <div>
-                      <h4>{item.name.common}</h4>
+                      <h2>{item.name.common}</h2>
                     </div>
                     </div>
     </div>
